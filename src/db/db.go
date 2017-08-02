@@ -1,28 +1,42 @@
-package db
+package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
+	"net/http"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-func main() {
-	db, err := sql.Open("mssql", "server=weiyi1998.com;port=18888;user id=sa;password=123!@#qwe;database=TEST;encrypt=disable")
+type DB struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+}
+
+func (d *DB) GetDb() *sql.DB {
+	db, err := sql.Open("mssql", fmt.Sprintf("server=%s;port=%s;user id=%s;password=%s;database=%s;encrypt=disable", d.Host, d.Port, d.User, d.Password, d.Database))
 	if err != nil {
 		log.Fatalf("Open database error: %s\n", err)
 	}
+	return db
+}
+
+func (d *DB) Query(sql string) string {
+	db := d.GetDb()
 	defer db.Close()
 
-	err = db.Ping()
+	err := db.Ping()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query("select top 2 * from db_product")
+	rows, err := db.Query(sql)
 	if err != nil {
 		log.Println(err)
 	}
@@ -35,52 +49,49 @@ func main() {
 		scanArgs[i] = &data[i]
 	}
 
-	// values := make([]sql.RawBytes, len(cols))
-	// values := make([]interface{}, len(cols))
-	// fmt.Println(values)
-
+	list := []map[string]interface{}{}
 	for rows.Next() {
-		// var h float64
-		// if err := rows.Scan(&h); err != nil {
-		// 	fmt.Println(err.Error())
-		// }
-		// fmt.Println(h)
-		// map = make(map[string]interface{})
 		rows.Scan(scanArgs...)
-		PrintRow(scanArgs)
-		// record := make(map[string]string)
-		// for i, col := range values {
-		// 	if col != nil {
-		// 		record[cols[i]] = string(col.([]byte))
-		// 	}
-		// }
-		// fmt.Println(record)
+		record := make(map[string]interface{})
+		for i, val := range scanArgs {
+			switch v := (*(val.(*interface{}))).(type) {
+			case nil:
+				continue
+			case bool:
+				if v {
+					record[cols[i]] = true
+				} else {
+					record[cols[i]] = false
+				}
+			case []byte:
+				record[cols[i]] = string(v)
+			case time.Time:
+				record[cols[i]] = v.Format("2016-01-02 15:05:05.999")
+			default:
+				record[cols[i]] = v
+			}
+		}
+
+		list = append(list, record)
 	}
 
-	fmt.Println("finish")
-	fmt.Println("DB Test end")
+	da, err := json.Marshal(list)
+	if err != nil {
+		fmt.Println(err.Error)
+	}
+
+	return string(da)
 }
 
-func PrintRow(colsdata []interface{}) {
-	for _, val := range colsdata {
-		fmt.Println(reflect.TypeOf(*(val.(*interface{}))))
-		switch v := (*(val.(*interface{}))).(type) {
-		case nil:
-			fmt.Println("NULL")
-		case bool:
-			if v {
-				fmt.Println("True")
-			} else {
-				fmt.Println("False")
-			}
-		case []byte:
-			fmt.Println("string: " + string(v))
-		case time.Time:
-			fmt.Println(v.Format("2016-01-02 15:05:05.999"))
-		default:
-			fmt.Println(v)
-		}
-		fmt.Print("=================\n")
-	}
-	fmt.Println()
+func dbHandler(w http.ResponseWriter, req *http.Request) {
+
+}
+
+func main() {
+	db := DB{Host: "weiyi1998.com", Port: "18888", User: "sa", Password: "123!@#qwe", Database: "TEST"}
+	result := db.Query("select top 2 * from db_product")
+	println(result)
+
+	http.HandleFunc("/db", dbHandler)
+	http.ListenAndServe(":8001", nil)
 }

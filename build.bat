@@ -1,5 +1,5 @@
 @echo off
-set GOPATH=C:\workspace\ectongs\ect_client
+set GOPATH=C:\workspace\my\ect_client
 
 
 REM go install github.com/acroca/go-symbols

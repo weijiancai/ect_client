@@ -13,7 +13,10 @@ REM go install github.com/rogpeppe/godef
 REM go install github.com/sqs/goreturns
 REM go install github.com/tpng/gopkgs
 REM go install github.com/sqs/goreturns
+REM go get github.com/gorilla/websocket
 REM go get github.com/denisenkom/go-mssqldb
-go install ect
-start "" "./bin/ect.exe"
+go build src\main.go
+REM start "" "./bin/ect.exe"
+main.exe
 REM go test -v ect
+pause

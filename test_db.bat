@@ -1,0 +1,1 @@
+go run .\src\db\db.go -H "119.254.9.102" -P 2005 -u SHLM -p "SHLM&yhdt" -d "booksh" -s "select top 1 * from db_product"

@@ -1,0 +1,13 @@
+{
+	"db_type": "",
+	"db_host": "",
+	"db_port": 0,
+	"db_username": "",
+	"db_password": "",
+	"db_database": "",
+	"server_url": "",
+	"client_key": "",
+	"erp_type": "",
+	"erp_station": "",
+	"local_port": 0
+}

@@ -1,4 +1,4 @@
-package main
+package ect
 
 import (
 	"os/exec"
@@ -20,45 +20,48 @@ type Config struct {
 	DbPassword string `json:"db_password"`
 	DbDatabase string `json:"db_database"`
 	ServerUrl string `json:"server_url"`
-	ServerKey string `json:"server_key"`
+	ClientKey string `json:"client_key"`
 	ErpType string `json:"erp_type"`
 	ErpStation string `json:"erp_station"`
+	LocalPort int `json:"local_port"`
 }
 
+var ConfigInfo Config
+
 func init() {
-	curPath := getCurrentPath()
+	curPath := GetCurrentPath()
 	log.Println(curPath)
-	configPath := getCurrentPath() + "\\config.json"
+	configPath := GetCurrentPath() + "\\config.json"
 	var f *os.File
 	var err error
 
-	var config = Config{}
+	ConfigInfo = Config{}
 	if checkFileIsExist(configPath) {
 		f, err = os.OpenFile(configPath, os.O_RDONLY, 0666)
-		check(err)
+		Error(err)
 		bytes,err := ioutil.ReadAll(f)
-		check(err)
+		Error(err)
 		log.Println(string(bytes))
 
-		err = json.Unmarshal(bytes,&config)
-		check(err)
+		err = json.Unmarshal(bytes,&ConfigInfo)
+		Error(err)
 
-		fmt.Printf("CONFIG:%v\n",config)
+		fmt.Printf("CONFIG:%v\n", ConfigInfo)
 
 	} else {
 		// 创建文件
 		f, err = os.Create(configPath)
-		check(err)
+		Error(err)
 		// 写入内容
-		str, err :=json.MarshalIndent(config,"","\t");
+		str, err :=json.MarshalIndent(ConfigInfo,"","\t");
 		if err != nil {
-			check(err)
+			Error(err)
 		}
 		io.WriteString(f, string(str))
 	}
 }
 
-func getCurrentPath() string {
+func GetCurrentPath() string {
 	file, _ := exec.LookPath(os.Args[0])
 	fmt.Println("file:", file)
 	path, _ := filepath.Abs(file)
@@ -68,6 +71,16 @@ func getCurrentPath() string {
 	splitstring = strings.Split(path, splitstring[size-1])
 	ret := strings.Replace(splitstring[0], "\\", "/", size-1)
 	return ret
+}
+
+func CheckConfig() {
+	if ConfigInfo.DbType == "" {
+		configError("数据库类型")
+	}
+}
+
+func configError(param string) {
+	ErrorStr("参数错误：" + param)
 }
 
 func check(e error) {
@@ -85,8 +98,4 @@ func checkFileIsExist(filename string) bool {
 		exist = false
 	}
 	return exist
-}
-
-func main() {
-	log.Println("start")
 }
